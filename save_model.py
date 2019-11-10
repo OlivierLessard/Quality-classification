@@ -18,3 +18,14 @@ def save_test_and_pred(oos_y, oos_pred):
     pickle.dump(oos_pred, pickle_out)
     pickle_out.close()
 
+
+def save_y_test_and_pred(y_pred, y_test, fold):
+    pickle_out = open("y_pred_{}.pickle".format(fold), "wb")
+    pickle.dump(y_pred, pickle_out)
+    pickle_out.close()
+
+    pickle_out = open("y_test_{}.pickle".format(fold), "wb")
+    pickle.dump(y_test, pickle_out)
+    pickle_out.close()
+
+

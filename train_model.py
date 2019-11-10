@@ -2,11 +2,11 @@ from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import balanced_accuracy_score
-from __future__ import print_function
 from build_model import build_finetune_model
-from save_model import save_model, save_test_and_pred
+from save_model import save_model, save_test_and_pred, save_y_test_and_pred
 from load_data import create_training_data
 from metrics import test_model, print_metrics
+from data_generator import DataGenerator
 from keras.callbacks import TensorBoard
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import make_pipeline as make_pipeline_imb
@@ -17,12 +17,13 @@ import keras
 import pickle
 import time
 import sklearn
+#from __future__ import print_function
 
 
-def train_model(model, x_train, y_train, x_test, y_test, x_cv, y_cv, model_name):
+def train_model(model, x_train, y_train, x_cv, y_cv, model_name):
     # training parameters
     batch_size = 32
-    epochs = 2
+    epochs = 30
     data_augmentation = True
 
     # Prepare ModelCheckpoint callback
@@ -37,7 +38,7 @@ def train_model(model, x_train, y_train, x_test, y_test, x_cv, y_cv, model_name)
 
     lr_reducer = ReduceLROnPlateau(factor=0.5, monitor='val_accuracy', mode=max, cooldown=0, patience=5, min_lr=0.5e-6)
 
-    earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.001, patience=5, verbose=0, mode='auto',
+    earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.001, patience=20, verbose=0, mode='auto',
                                   baseline=None, restore_best_weights=False)
     callbacks = [checkpoint, lr_reducer, tensorboard, earlystopping]
 
@@ -104,94 +105,93 @@ def train_model(model, x_train, y_train, x_test, y_test, x_cv, y_cv, model_name)
     return history, model
 
 
-# parameters
-num_classes = 2
-img_size = 80
-categories = ["Dog", "Cat"]
+if __name__ == "__main__":
+    # parameters
+    num_classes = 2
+    img_size = 80
+    #categories = ["Dog", "Cat"]
+    categories = ["Bad", "Workable"]
 
-# load saved data
-x = []
-y = []
-try:
-    with open('x.pickle', 'rb') as data:
-        x = pickle.load(data)
-        data.close()
-    with open('y.pickle', 'rb') as data:
-        y = pickle.load(data)
-        data.close()
-except Exception as e:
-    x, y = create_training_data(img_size, categories)
-input_shape = x.shape[1:]
+    # load saved data
+    x = []
+    y = []
+    try:
+        with open('x.pickle', 'rb') as data:
+            x = pickle.load(data)
+            data.close()
+        with open('y.pickle', 'rb') as data:
+            y = pickle.load(data)
+            data.close()
+    except Exception as e:
+        x, y = create_training_data(img_size, categories)
+    input_shape = x.shape[1:]
 
 
-kf = StratifiedKFold(n_splits=5, random_state=42)
-# accuracy = []
-# precision = []
-# recall = []
-# f1 = []
-# auc = []
-oos_y = []
-oos_pred = []
-folds = 0
-index_best_model = 1
-best_acc = 0
-x = np.reshape(x, (x.shape[0], -1))                                     # x shape: (n_samples, n_features)
-for train_index, test_index in kf.split(x, y):
-    folds += 1
-    print(f"\n fold #{folds}")
-    if folds == 1:
-        x = np.reshape(x, (-1, img_size, img_size, 3))                      # x shape: (n_samples, img_size, img_size, 3)
-        y = keras.utils.to_categorical(y, num_classes)
+    kf = StratifiedKFold(n_splits=5, random_state=42)
 
-    # create cv set
-    x_train, x_test = x[train_index], x[test_index]
-    y_train, y_test = y[train_index], y[test_index]
-    x_train, x_cv, y_train, y_cv = train_test_split(x_train, y_train, test_size=0.25, random_state=42)
+    oos_y = []
+    oos_pred = []
+    folds = 0
+    index_best_model = 1
+    best_acc = 0
+    x = np.reshape(x, (x.shape[0], -1))                                     # x shape: (n_samples, n_features)
+    for train_index, test_index in kf.split(x, y):
+        folds += 1
 
-    # equalize training set
-    ros = RandomOverSampler(sampling_strategy='auto', random_state=42)
-    x_train = np.reshape(x_train, (x_train.shape[0], -1))
-    y_train = np.argmax(y_train, axis=1)                               # n_features
-    x_train_res, y_train_res = ros.fit_resample(x_train, y_train)      # resample the train set
-    x_train_res = np.reshape(x_train_res, (-1, img_size, img_size, 3))
-    y_train_res = keras.utils.to_categorical(y_train_res, num_classes)
+        if folds < 5:
+            continue
+        #if folds == 1:
+        if folds == 5:
+            x = np.reshape(x, (-1, img_size, img_size, 3))                  # x shape: (n_samples, img_size, img_size, 3)
+            y = keras.utils.to_categorical(y, num_classes)
 
-    # build the model
-    if folds == 1:
-        model = build_finetune_model(input_shape, num_classes, show_summary=True)
-    else:
-        model = build_finetune_model(input_shape, num_classes, show_summary=False)
+        # create cv set
+        x_train, x_test = x[train_index], x[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        x_train, x_cv, y_train, y_cv = train_test_split(x_train, y_train, test_size=0.25, random_state=42, stratify=y_train)
 
-    # train with all the specifications
-    model_name = 'weights (%d).best.hdf5' % folds
-    history, model = train_model(model, x_train_res, y_train_res, x_test, y_test, x_cv, y_cv, model_name)
+        # equalize training set
+        ros = RandomOverSampler(sampling_strategy='auto', random_state=42)
+        x_train = np.reshape(x_train, (x_train.shape[0], -1))
+        y_train = np.argmax(y_train, axis=1)                               # n_features
+        x_train_ros, y_train_ros = ros.fit_resample(x_train, y_train)      # resample the train set
+        x_train_ros = np.reshape(x_train_ros, (-1, img_size, img_size, 3))
+        y_train_ros = keras.utils.to_categorical(y_train_ros, num_classes)
 
-    # prepare model evaluation
-    path = r"C:\Users\olivi\PycharmProjects\DL_Project1\saved_models"
-    path_model = os.path.join(path, model_name)
-    model_best_weights = load_model(path_model)
-    y_prediction = model_best_weights.predict(x_test, batch_size=None, verbose=0, steps=None, callbacks=None, max_queue_size=10,
-                                 workers=1, use_multiprocessing=False)
-    oos_y.append(y_test)    # [n features, n classes]
-    oos_pred.append(y_prediction)
+        # build the model
+        if folds == 1:
+            model = build_finetune_model(input_shape, num_classes, show_summary=True)
+        else:
+            model = build_finetune_model(input_shape, num_classes, show_summary=False)
 
-    # print fold result
-    headline = f"fold #{folds}"
-    print_metrics(headline, np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
-    fold_acc = balanced_accuracy_score(np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
-    if fold_acc > best_acc:  # best acc according the best weights
-        index_best_model = folds
-        best_acc = fold_acc
+        # train with all the specifications
+        model_name = 'weights ({}).best.hdf5'.format(folds)
+        history, model = train_model(model, x_train_ros, y_train_ros, x_cv, y_cv, model_name)
 
-    # save model (last weights)
-    # model_name = f"model #{folds}"
-    # save_model(model, model_name)
+        # get the best model for evaluation
+        path = r"C:\Users\olivi\PycharmProjects\DL_Project1\saved_models"
+        path_model = os.path.join(path, model_name)
+        model_best_weights = load_model(path_model)
+        y_prediction = model_best_weights.predict(x_test, batch_size=None, verbose=0, steps=None, callbacks=None, max_queue_size=10,
+                                                  workers=1, use_multiprocessing=False)
 
-# build the oos y and pred
-oos_y = np.concatenate(oos_y)
-oos_pred = np.concatenate(oos_pred)
-save_test_and_pred(oos_y, oos_pred)
+        save_y_test_and_pred(y_prediction, y_test, folds)
+        oos_y.append(y_test)                # [n features, n classes]
+        oos_pred.append(y_prediction)       # [n features, n classes]
 
-# plot metrics and save cm
-test_model("/n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), categories)
+        # print fold result
+        headline = f"fold #{folds}"
+        print_metrics(headline, np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
+        fold_acc = balanced_accuracy_score(np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
+        if fold_acc > best_acc:  # best acc according the best weights
+            index_best_model = folds
+            best_acc = fold_acc
+
+    # build the oos y and pred
+    oos_y = np.concatenate(oos_y)
+    oos_pred = np.concatenate(oos_pred)
+    save_test_and_pred(oos_y, oos_pred)
+
+    # plot metrics and save cm
+    test_model("/n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), categories)
 
