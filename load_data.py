@@ -5,38 +5,60 @@ import numpy as np
 import keras
 import pickle
 from matplotlib import pyplot as plt
+import argparse
+
+min_y = 100
+max_y = 300
+min_x = 240
+max_x = 400
+
+# min_y = 100
+# max_y = 350
+# min_x = 180
+# max_x = 450
+
+delta_x = max_x - min_x
+delta_y = max_y - min_y
 
 
-def create_training_data(IMG_SIZE, categories):
-    # data information
-    #data_path = r"C:\Users\olivi\Desktop\PetImages - Copie"
+def create_training_data(categories):
     data_path = r"D:\Dataset2_jpg"
     training_data = []
-
-    for category in categories:
-        path = os.path.join(data_path, category)
-        class_num = categories.index(category)  # label
-        for img in os.listdir(path):
-            try:
-                img_array = cv2.imread(os.path.join(path, img), cv2.IMREAD_GRAYSCALE)
-                #img_array = img_array[47:447, 78:559]   # crop contour
-                img_array = img_array[100:300, 240:400]   # zoom
-                new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE))
-                training_data.append([new_array, class_num])
-            except Exception as e:
-                pass
-
-    # data with random order
-    random.shuffle(training_data)
-
     x = []
     y = []
+
+    # load x, y
+    try:
+        with open('x.pickle', 'rb') as data:
+            x = pickle.load(data)
+            data.close()
+        with open('y.pickle', 'rb') as data:
+            y = pickle.load(data)
+            data.close()
+        return x, y
+    except Exception as e:
+        pass
+
+    # create x, y
+    for category in categories:                 # bad, workable
+        path = os.path.join(data_path, category)
+        class_num = categories.index(category)  # label
+        for session in os.listdir(path):        # ordered by category\session\im
+            path_session = os.path.join(path, session)
+            for img in os.listdir(path_session):
+                try:
+                    img_array = cv2.imread(os.path.join(path_session, img), cv2.IMREAD_GRAYSCALE)
+                    # crop contour
+                    img_array = img_array[min_y:max_y, min_x:max_x]  # crop
+                    training_data.append([img_array, class_num])
+                except Exception as e:
+                    pass
 
     for features, label in training_data:
         x.append(features)
         y.append(label)
 
-    x = np.array(x).reshape(-1, IMG_SIZE, IMG_SIZE)     # nd array
+    x = np.array(x).reshape(-1, delta_y, delta_x)     # nd array
     x = np.repeat(x[..., np.newaxis], 3, -1)            # same 3 channels
 
     y = np.array(y).reshape(-1, 1)
@@ -62,7 +84,73 @@ def create_training_data(IMG_SIZE, categories):
 
     return x, y
 
+
+def create_fold_data():
+    from train_model import hard_stratified_kfold
+    from imblearn.over_sampling import RandomOverSampler
+
+    num_classes = 2
+    categories = ["Bad", "Workable"]
+
+    # Get the data
+    x, y = create_training_data(categories)
+    input_shape = x.shape[1:]
+
+    x = np.reshape(x, (x.shape[0], -1))  # (n_samples, n_features)
+    folds = 0
+    for train_index, val_index, test_index in hard_stratified_kfold():
+        folds += 1
+        if folds == 1:
+            x = np.reshape(x, (-1, delta_y, delta_x, 3))  # (n_samples, delta_y, delta_x, 3)
+            y = keras.utils.to_categorical(y, num_classes)  # (n_samples, nb_classes)
+
+        # create sets, index are shuffled
+        x_train, x_cv, x_test = x[train_index], x[val_index], x[test_index]
+        y_train, y_cv, y_test = y[train_index], y[val_index], y[test_index]
+
+        # equalize training set
+        ros = RandomOverSampler(sampling_strategy='auto', random_state=42)
+        x_train = np.reshape(x_train, (x_train.shape[0], -1))
+        y_train = np.argmax(y_train, axis=1)                               # n_features
+        x_train_ros, y_train_ros = ros.fit_resample(x_train, y_train)      # resample the bad ones
+        x_train_ros = np.reshape(x_train_ros, (-1, delta_y, delta_x, 3))
+        y_train_ros = keras.utils.to_categorical(y_train_ros, num_classes)
+
+        # shuffle again after oversampling
+        np.random.seed(0)
+        np.random.shuffle(y_train_ros)
+        np.random.seed(0)
+        np.random.shuffle(x_train_ros)
+
+        # save
+        pickle_out = open("x_train_ros_{}.pickle".format(folds), "wb")
+        pickle.dump(x_train_ros, pickle_out)
+        pickle_out.close()
+
+        pickle_out = open("y_train_ros_{}.pickle".format(folds), "wb")
+        pickle.dump(y_train_ros, pickle_out)
+        pickle_out.close()
+
+        pickle_out = open("x_cv_{}.pickle".format(folds), "wb")
+        pickle.dump(x_cv, pickle_out)
+        pickle_out.close()
+
+        pickle_out = open("y_cv_{}.pickle".format(folds), "wb")
+        pickle.dump(y_cv, pickle_out)
+        pickle_out.close()
+
+        pickle_out = open("x_test_{}.pickle".format(folds), "wb")
+        pickle.dump(x_test, pickle_out)
+        pickle_out.close()
+
+        pickle_out = open("y_test_{}.pickle".format(folds), "wb")
+        pickle.dump(y_test, pickle_out)
+        pickle_out.close()
+
+
 if __name__ == "__main__":
     categories = ["Bad", "Workable"]
-    create_training_data(80, categories)
+    create_training_data(categories)
+    #create_fold_data()
+
 

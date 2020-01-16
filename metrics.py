@@ -40,6 +40,13 @@ def plot_confusion_matrix(y_true, y_pred, classes,
            title=title,
            ylabel='True label',
            xlabel='Predicted label')
+    # ax.set(xticks=np.arange(cm.shape[1]),
+    #        yticks=np.arange(cm.shape[0]),
+    #        # ... and label them with the respective list entries
+    #        xticklabels=classes, yticklabels=classes,
+    #        title=title,
+    #        ylabel='Vrai classe',
+    #        xlabel='Classe predite')
 
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
@@ -70,8 +77,8 @@ def test_model(headline, oos_y, oos_pred, CATEGORIES):  # oos_y shape : [n_featu
     plot_confusion_matrix(oos_y, oos_pred, classes=CATEGORIES,
                           normalize=True,
                           title='Normalized confusion matrix')
-    plt.show()
     plt.savefig("confusion matrix")
+    plt.show()
 
 
 def print_metrics(headline, y_test, pred):
@@ -102,56 +109,65 @@ def print_metrics2(headline, y_test, pred):
 
 
 if __name__ == "__main__":
-    with open('y_test_1.pickle', 'rb') as data:
-        y_test_1 = pickle.load(data)
+    # with open('y_test_1.pickle', 'rb') as data:
+    #     y_test_1 = pickle.load(data)
+    #     data.close()
+    # with open('y_pred_1.pickle', 'rb') as data:
+    #     y_pred_1 = pickle.load(data)
+    #     data.close()
+    # with open('y_test_2.pickle', 'rb') as data:
+    #     y_test_2 = pickle.load(data)
+    #     data.close()
+    # with open('y_pred_2.pickle', 'rb') as data:
+    #     y_pred_2 = pickle.load(data)
+    #     data.close()
+    # with open('y_test_3.pickle', 'rb') as data:
+    #     y_test_3 = pickle.load(data)
+    #     data.close()
+    # with open('y_pred_3.pickle', 'rb') as data:
+    #     y_pred_3 = pickle.load(data)
+    #     data.close()
+    # with open('y_test_4.pickle', 'rb') as data:
+    #     y_test_4 = pickle.load(data)
+    #     data.close()
+    # with open('y_pred_4.pickle', 'rb') as data:
+    #     y_pred_4 = pickle.load(data)
+    #     data.close()
+    # with open('y_test_5.pickle', 'rb') as data:
+    #     y_test_5 = pickle.load(data)
+    #     data.close()
+    # with open('y_pred_5.pickle', 'rb') as data:
+    #     y_pred_5 = pickle.load(data)
+    #     data.close()
+    #
+    # oos_y = []
+    # oos_pred = []
+    #
+    # oos_y.append(y_test_1)
+    # oos_y.append(y_test_2)
+    # oos_y.append(y_test_3)
+    # oos_y.append(y_test_4)
+    # oos_y.append(y_test_5)
+    #
+    # oos_pred.append(y_pred_1)
+    # oos_pred.append(y_pred_2)
+    # oos_pred.append(y_pred_3)
+    # oos_pred.append(y_pred_4)
+    # oos_pred.append(y_pred_5)
+    #
+    # oos_y = np.concatenate(oos_y)
+    # oos_pred = np.concatenate(oos_pred)
+    # save_test_and_pred(oos_y, oos_pred)
+    # test_model("\n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), ["Bad", "Workable"])
+
+    with open('oos_pred.pickle', 'rb') as data:
+        oos_pred = pickle.load(data)
         data.close()
-    with open('y_pred_1.pickle', 'rb') as data:
-        y_pred_1 = pickle.load(data)
-        data.close()
-    with open('y_test_2.pickle', 'rb') as data:
-        y_test_2 = pickle.load(data)
-        data.close()
-    with open('y_pred_2.pickle', 'rb') as data:
-        y_pred_2 = pickle.load(data)
-        data.close()
-    with open('y_test_3.pickle', 'rb') as data:
-        y_test_3 = pickle.load(data)
-        data.close()
-    with open('y_pred_3.pickle', 'rb') as data:
-        y_pred_3 = pickle.load(data)
-        data.close()
-    with open('y_test_4.pickle', 'rb') as data:
-        y_test_4 = pickle.load(data)
-        data.close()
-    with open('y_pred_4.pickle', 'rb') as data:
-        y_pred_4 = pickle.load(data)
-        data.close()
-    with open('y_test_5.pickle', 'rb') as data:
-        y_test_5 = pickle.load(data)
-        data.close()
-    with open('y_pred_5.pickle', 'rb') as data:
-        y_pred_5 = pickle.load(data)
+    with open('oos_y.pickle', 'rb') as data:
+        oos_y = pickle.load(data)
         data.close()
 
-    oos_y = []
-    oos_pred = []
-
-    oos_y.append(y_test_1)
-    oos_y.append(y_test_2)
-    oos_y.append(y_test_3)
-    oos_y.append(y_test_4)
-    oos_y.append(y_test_5)
-
-    oos_pred.append(y_pred_1)
-    oos_pred.append(y_pred_2)
-    oos_pred.append(y_pred_3)
-    oos_pred.append(y_pred_4)
-    oos_pred.append(y_pred_5)
-
-    oos_y = np.concatenate(oos_y)
-    oos_pred = np.concatenate(oos_pred)
-    save_test_and_pred(oos_y, oos_pred)
-    test_model("\n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), ["Bad", "Workable"])
-
-
+    plot_confusion_matrix(np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), ["Mauvaise", "Utilisable"], True, title="Matrice de confusion normalisee")
+    plt.savefig("confusion matrix")
+    plt.show()
 

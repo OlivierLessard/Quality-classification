@@ -1,12 +1,12 @@
 from keras.layers import Dense, Dropout
 from keras.layers import Flatten
 from keras.models import Model
-from keras.applications.densenet import DenseNet169
+from keras.applications.densenet import DenseNet169, DenseNet121
 from keras.optimizers import Adam
 
 
 def build_finetune_model(input_shape, num_classes, show_summary):
-    base_model = DenseNet169(weights='imagenet', include_top=False, input_shape=input_shape)
+    base_model = DenseNet121(weights='imagenet', include_top=False, input_shape=input_shape)
 
     dropout = 0.5
     fc_layers = 1024
