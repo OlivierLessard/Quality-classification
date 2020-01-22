@@ -2,17 +2,26 @@ from keras.layers import Dense, Dropout
 from keras.layers import Flatten
 from keras.models import Model
 from keras.applications.densenet import DenseNet169, DenseNet121
+from keras.applications.xception import Xception
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.optimizers import Adam
 
 
 def build_finetune_model(input_shape, num_classes, show_summary):
     base_model = DenseNet121(weights='imagenet', include_top=False, input_shape=input_shape)
+    #base_model = Xception(include_top=False, weights='imagenet', input_shape=input_shape)
+    #base_model = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=input_shape)
 
     dropout = 0.5
     fc_layers = 1024
 
     # defreeze all the layers
+    count_freeze = 0
     for layer in base_model.layers:
+        count_freeze += 1
+        # if count_freeze < 30:
+        #     layer.trainable = False
+        # else:
         layer.trainable = True
 
     x = base_model.output

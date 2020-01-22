@@ -22,7 +22,7 @@ delta_y = max_y - min_y
 
 
 def create_training_data(categories):
-    data_path = r"D:\Dataset2_jpg"
+    data_path = r"C:\Users\aiuser\Desktop\New Dataset 2 JPG"
     training_data = []
     x = []
     y = []
@@ -40,25 +40,27 @@ def create_training_data(categories):
         pass
 
     # create x, y
-    for category in categories:                 # bad, workable
-        path = os.path.join(data_path, category)
-        class_num = categories.index(category)  # label
-        for session in os.listdir(path):        # ordered by category\session\im
-            path_session = os.path.join(path, session)
-            for img in os.listdir(path_session):
-                try:
-                    img_array = cv2.imread(os.path.join(path_session, img), cv2.IMREAD_GRAYSCALE)
-                    # crop contour
-                    img_array = img_array[min_y:max_y, min_x:max_x]  # crop
-                    training_data.append([img_array, class_num])
-                except Exception as e:
-                    pass
+    for patient in os.listdir(data_path):                           # ClarityPatientXX
+        patient_path = os.path.join(data_path, patient)
+        for category in os.listdir(patient_path):                   # bad, workable
+            category_path = os.path.join(patient_path, category)
+            class_num = categories.index(category)                  # label
+            for session in os.listdir(category_path):               # session
+                session_path = os.path.join(category_path, session)
+                for img in os.listdir(session_path):
+                    try:
+                        img_array = cv2.imread(os.path.join(session_path, img), cv2.IMREAD_GRAYSCALE)
+                        # crop contour
+                        img_array = img_array[min_y:max_y, min_x:max_x]
+                        training_data.append([img_array, class_num])
+                    except Exception as e:
+                        pass
 
     for features, label in training_data:
         x.append(features)
         y.append(label)
 
-    x = np.array(x).reshape(-1, delta_y, delta_x)     # nd array
+    x = np.array(x).reshape(-1, delta_y, delta_x)       # nd array
     x = np.repeat(x[..., np.newaxis], 3, -1)            # same 3 channels
 
     y = np.array(y).reshape(-1, 1)

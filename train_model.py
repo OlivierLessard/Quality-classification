@@ -17,29 +17,18 @@ import time
 
 
 def hard_stratified_kfold_patient_split():
-    # split 5 times the ordered data. Ordered by category, session, im
-    test_index_1 = np.arange(145)       # clarityPatient Bad
-    test_index_2 = np.arange(145, 206)  # David Bad
-    test_index_3 = np.arange(221, 235)  # heath bad
-    test_index_4 = np.arange(206, 221)  # george bad
-
-    test_index_1 = np.append(test_index_1, np.arange(285, 415))  # clarityPatient workable
-    test_index_2 = np.append(test_index_2, np.arange(415, 478))  # david workable
-    test_index_2 = np.append(test_index_2, np.arange(531, 568))  # j-c workable
-    test_index_3 = np.append(test_index_3, np.arange(246, 274))  # louis bad
-    test_index_3 = np.append(test_index_3, np.arange(658, 709))  # Ron bad
-    test_index_4 = np.append(test_index_4, np.arange(235, 246))  # jeff bad
-    test_index_4 = np.append(test_index_4, np.arange(274, 285))  # pierre bad
-    test_index_4 = np.append(test_index_4, np.arange(478, 510))  # george workable
-    test_index_4 = np.append(test_index_4, np.arange(568, 603))  # jeff workable
-    test_index_4 = np.append(test_index_4, np.arange(635, 658))  # pierre workable
+    # split 4 times the data ordered by patient\category\sesssion\im
+    test_index_1 = np.arange(722)           # clarityPatient 01 and 02
+    test_index_2 = np.arange(722, 1462)     # clarityPatient 03 and 04
+    test_index_3 = np.arange(1462, 2204)    # clarityPatient 05 and 06
+    test_index_4 = np.arange(2204, 3130)    # clarityPatient 07 and 08 and 09
 
     val_index_1 = test_index_2
     val_index_2 = test_index_3
     val_index_3 = test_index_4
     val_index_4 = test_index_1
 
-    all_index = np.arange(709)
+    all_index = np.arange(3130)
     train_index_1 = np.delete(all_index, np.append(test_index_1, val_index_1))
     train_index_2 = np.delete(all_index, np.append(test_index_2, val_index_2))
     train_index_3 = np.delete(all_index, np.append(test_index_3, val_index_3))
@@ -82,7 +71,7 @@ def hard_stratified_kfold_session_split():
 
 def train_model(model, x_train, y_train, x_cv, y_cv, model_name):
     # training parameters
-    batch_size = 16
+    batch_size = 32
     epochs = 100
     data_augmentation = True
 
@@ -173,25 +162,26 @@ if __name__ == "__main__":
     # hard stratified K fold
     oos_y, oos_pred = [], []
     folds, index_best_model, best_acc = 0, 1, 0
-    x = np.reshape(x, (x.shape[0], -1))  # (n_samples, n_features)
+    x = np.reshape(x, (x.shape[0], -1))                                 # (n_samples, n_features)
 
     for train_index, val_index, test_index in hard_stratified_kfold_patient_split():
         folds += 1
         print("\n fold #{}".format(folds))
-        #if folds == 1:
-        if folds < 4:
-            with open("y_pred_{}.pickle".format(folds), 'rb') as data:
-                y_prediction = pickle.load(data)
-                data.close()
-            with open("y_test_{}.pickle".format(folds), 'rb') as data:
-                y_test = pickle.load(data)
-                data.close()
-            oos_y.append(y_test)  # [n features, n classes]
-            oos_pred.append(y_prediction)  # [n features, n classes]
-            continue
-        if folds == 4:
+        # if folds == 1:
+        #     # if folds < 4:
+        #     with open("y_pred_{}.pickle".format(folds), 'rb') as data:
+        #         y_prediction = pickle.load(data)
+        #         data.close()
+        #     with open("y_test_{}.pickle".format(folds), 'rb') as data:
+        #         y_test = pickle.load(data)
+        #         data.close()
+        #     oos_y.append(y_test)                                        # [n features, n classes]
+        #     oos_pred.append(y_prediction)                               # [n features, n classes]
+        #     continue
+
+        if folds == 1:
             x = np.reshape(x, (-1, input_shape[0], input_shape[1], 3))  # (n_samples, delta_y, delta_x, 3)
-            y = keras.utils.to_categorical(y, num_classes)  # (n_samples, nb_classes)
+            y = keras.utils.to_categorical(y, num_classes)              # (n_samples, nb_classes)
 
         # create sets, index are shuffled
         x_train, x_cv, x_test = x[train_index], x[val_index], x[test_index]
