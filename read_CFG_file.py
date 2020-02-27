@@ -1,43 +1,31 @@
 import configparser, os
 
 
-config = configparser.RawConfigParser()
-
-# When adding sections or items, add them in the reverse order of
-# how you want them to be displayed in the actual file.
-# In addition, please note that using RawConfigParser's and the raw
-# mode of ConfigParser's respective set functions, you can assign
-# non-string values to keys internally, but will receive an error
-# when attempting to write to a file or when you get it in non-raw
-# mode. SafeConfigParser does not allow such assignments to take place.
-config.add_section('Section1')
-config.set('Section1', 'an_int', '15')
-config.set('Section1', 'a_bool', 'true')
-config.set('Section1', 'a_float', '3.1415')
-config.set('Section1', 'baz', 'fun')
-config.set('Section1', 'bar', 'Python')
-config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
-
-# Writing our configuration file to 'example.cfg'
-with open('example.cfg', 'w') as configfile:
-    config.write(configfile)
-
-
-
-path = r"C:\Users\aiuser\Desktop\thales documents\Example of cfg\ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg"
-# file = open(path)
-# config = configparser.ConfigParser()
-# #config.readfp(open(path))
+def create_dict(file):
+    """
+    :param file: cfg file with the parameters
+    :return: dictionary with the important settings
+    """
+    settings_dict = {}
+    line_index = 0
+    line = file.readline()
+    while line:
+        line_index += 1
+        if line_index == 5:
+            settings_dict["Optimization"] = line[20:-3]
+        if line_index == 7:
+            settings_dict["Contrast"] = int(line[14:-2])
+        if line_index == 9:
+            settings_dict["Gain"] = int(line[10:-2])
+        if line_index == 17:
+            settings_dict["FocusDepth"] = float(line[16:-2])
+        line = file.readline()
+    return settings_dict
 
 
-# config = configparser.ConfigParser()
-# fh = open(path, 'rb')
-# fh.readline()    # discard first line
-# config.read_file(fh)
+if __name__ == "__main__":
+    # path = r"C:\Users\aiuser\Desktop\thales documents\Example of cfg\ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg"
+    file = open('ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg')
+    config = configparser.ConfigParser()
+    settings_dict = create_dict(file)
 
-config = configparser.ConfigParser()
-#config.defaults()
-config.read(open(path))
-config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
-
-a = 1
