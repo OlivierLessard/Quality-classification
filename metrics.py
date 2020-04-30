@@ -109,56 +109,56 @@ def print_metrics2(headline, y_test, pred):
 
 
 if __name__ == "__main__":
-    # with open('y_test_1.pickle', 'rb') as data:
-    #     y_test_1 = pickle.load(data)
-    #     data.close()
-    # with open('y_pred_1.pickle', 'rb') as data:
-    #     y_pred_1 = pickle.load(data)
-    #     data.close()
-    # with open('y_test_2.pickle', 'rb') as data:
-    #     y_test_2 = pickle.load(data)
-    #     data.close()
-    # with open('y_pred_2.pickle', 'rb') as data:
-    #     y_pred_2 = pickle.load(data)
-    #     data.close()
-    # with open('y_test_3.pickle', 'rb') as data:
-    #     y_test_3 = pickle.load(data)
-    #     data.close()
-    # with open('y_pred_3.pickle', 'rb') as data:
-    #     y_pred_3 = pickle.load(data)
-    #     data.close()
-    # with open('y_test_4.pickle', 'rb') as data:
-    #     y_test_4 = pickle.load(data)
-    #     data.close()
-    # with open('y_pred_4.pickle', 'rb') as data:
-    #     y_pred_4 = pickle.load(data)
-    #     data.close()
+    with open('y_test_1.pickle', 'rb') as data:
+        y_test_1 = pickle.load(data)
+        data.close()
+    with open('y_pred_1.pickle', 'rb') as data:
+        y_pred_1 = pickle.load(data)
+        data.close()
+    with open('y_test_2.pickle', 'rb') as data:
+        y_test_2 = pickle.load(data)
+        data.close()
+    with open('y_pred_2.pickle', 'rb') as data:
+        y_pred_2 = pickle.load(data)
+        data.close()
+    with open('y_test_3.pickle', 'rb') as data:
+        y_test_3 = pickle.load(data)
+        data.close()
+    with open('y_pred_3.pickle', 'rb') as data:
+        y_pred_3 = pickle.load(data)
+        data.close()
+    with open('y_test_4.pickle', 'rb') as data:
+        y_test_4 = pickle.load(data)
+        data.close()
+    with open('y_pred_4.pickle', 'rb') as data:
+        y_pred_4 = pickle.load(data)
+        data.close()
     # with open('y_test_5.pickle', 'rb') as data:
     #     y_test_5 = pickle.load(data)
     #     data.close()
     # with open('y_pred_5.pickle', 'rb') as data:
     #     y_pred_5 = pickle.load(data)
     #     data.close()
-    #
-    # oos_y = []
-    # oos_pred = []
-    #
-    # oos_y.append(y_test_1)
-    # oos_y.append(y_test_2)
-    # oos_y.append(y_test_3)
-    # oos_y.append(y_test_4)
+
+    oos_y = []
+    oos_pred = []
+
+    oos_y.append(y_test_1)
+    oos_y.append(y_test_2)
+    oos_y.append(y_test_3)
+    oos_y.append(y_test_4)
     # oos_y.append(y_test_5)
-    #
-    # oos_pred.append(y_pred_1)
-    # oos_pred.append(y_pred_2)
-    # oos_pred.append(y_pred_3)
-    # oos_pred.append(y_pred_4)
+
+    oos_pred.append(y_pred_1)
+    oos_pred.append(y_pred_2)
+    oos_pred.append(y_pred_3)
+    oos_pred.append(y_pred_4)
     # oos_pred.append(y_pred_5)
-    #
-    # oos_y = np.concatenate(oos_y)
-    # oos_pred = np.concatenate(oos_pred)
-    # save_test_and_pred(oos_y, oos_pred)
-    # test_model("\n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), ["Bad", "Workable"])
+
+    oos_y = np.concatenate(oos_y)
+    oos_pred = np.concatenate(oos_pred)
+    save_test_and_pred(oos_y, oos_pred)
+    test_model("\n Final results : ", np.argmax(oos_y, axis=1), np.argmax(oos_pred, axis=1), ["Bad", "Workable"])
 
     with open('oos_pred.pickle', 'rb') as data:
         oos_pred = pickle.load(data)

@@ -7,22 +7,24 @@ import pickle
 from matplotlib import pyplot as plt
 import argparse
 
+# Crop used for denseNet
 min_y = 100
 max_y = 300
 min_x = 240
 max_x = 400
 
-# min_y = 100
-# max_y = 350
-# min_x = 180
-# max_x = 450
+# Crop used for mobileNet
+# min_y = 104
+# max_y = 104+224
+# min_x = 240
+# max_x = 240+224
 
 delta_x = max_x - min_x
 delta_y = max_y - min_y
 
 
 def create_training_data(categories):
-    data_path = r"C:\Users\aiuser\Desktop\New Dataset 2 JPG"
+    data_path = r"C:\Users\aiuser\Desktop\New Dataset 2 (DC Revised)"
     training_data = []
     x = []
     y = []
@@ -52,6 +54,7 @@ def create_training_data(categories):
                         img_array = cv2.imread(os.path.join(session_path, img), cv2.IMREAD_GRAYSCALE)
                         # crop contour
                         img_array = img_array[min_y:max_y, min_x:max_x]
+
                         training_data.append([img_array, class_num])
                     except Exception as e:
                         pass

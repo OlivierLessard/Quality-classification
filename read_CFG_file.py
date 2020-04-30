@@ -24,8 +24,8 @@ def create_dict(file):
 
 
 if __name__ == "__main__":
-    # path = r"C:\Users\aiuser\Desktop\thales documents\Example of cfg\ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg"
-    file = open('ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg')
+    file_name = 'ScanningCurrent Prostate (Autoscan (m4DC7-3 40)).cfg'
+    file = open(file_name)
     config = configparser.ConfigParser()
     settings_dict = create_dict(file)
 

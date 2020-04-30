@@ -15,13 +15,37 @@ import keras
 import pickle
 import time
 
+def hard_stratified_kfold_patient_split_no_TURP():
+    # split 4 times the data ordered by patient\category\sesssion\im
+    test_index_1 = np.arange(722)           # clarityPatient 01(343) and 02(722)
+    test_index_2 = np.arange(722, 1462)     # clarityPatient 03(1084) and 04(1462)
+    turp_index = np.arange(1462, 1840)      # clarityPatient 05(TURP)(1840)(378 images) not used for test/val
+    test_index_3 = np.arange(1840, 2403)    # clarityPatient 06(2204) and 07(2403)
+    test_index_4 = np.arange(2403, 3130)    # clarityPatient 08(2776) and 09(3130)
+
+    val_index_1 = test_index_2
+    #val_index_2 = test_index_3
+    val_index_2 = test_index_1  # changed
+    val_index_3 = test_index_4
+    val_index_4 = test_index_1
+
+    all_index = np.arange(3130)
+    all_index = np.delete(all_index, turp_index)  # no turp patient in the training
+    train_index_1 = np.delete(all_index, np.append(test_index_1, val_index_1))
+    train_index_2 = np.delete(all_index, np.append(test_index_2, val_index_2))
+    train_index_3 = np.delete(all_index, np.append(test_index_3, val_index_3))
+    train_index_4 = np.delete(all_index, np.append(test_index_4, val_index_4))
+
+    return [train_index_1, val_index_1, test_index_1], [train_index_2, val_index_2, test_index_2], [train_index_3, val_index_3, test_index_3], [train_index_4, val_index_4, test_index_4]
+
 
 def hard_stratified_kfold_patient_split():
     # split 4 times the data ordered by patient\category\sesssion\im
     test_index_1 = np.arange(722)           # clarityPatient 01 and 02
     test_index_2 = np.arange(722, 1462)     # clarityPatient 03 and 04
     test_index_3 = np.arange(1462, 2204)    # clarityPatient 05 and 06
-    test_index_4 = np.arange(2204, 3130)    # clarityPatient 07 and 08 and 09
+    #test_index_4 = np.arange(2204, 3130)    # clarityPatient 07 and 08 and 09
+    test_index_4 = np.arange(2204, 2776)    # clarityPatient 07 and 08 only, not 09
 
     val_index_1 = test_index_2
     val_index_2 = test_index_3
@@ -35,38 +59,6 @@ def hard_stratified_kfold_patient_split():
     train_index_4 = np.delete(all_index, np.append(test_index_4, val_index_4))
 
     return [train_index_1, val_index_1, test_index_1], [train_index_2, val_index_2, test_index_2], [train_index_3, val_index_3, test_index_3], [train_index_4, val_index_4, test_index_4]
-
-def hard_stratified_kfold_session_split():
-    # split 5 times the ordered data. Ordered by category, session, im
-    test_index_1 = np.arange(57)        # correspond to 3 different sessions (Bad)
-    test_index_2 = np.arange(57, 114)   # 3 other sessions (same patient)
-    test_index_3 = np.arange(114, 176)
-    test_index_4 = np.arange(176, 235)
-    test_index_5 = np.arange(235, 285)
-
-    test_index_1 = np.append(test_index_1, np.arange(285, 349))    # add good sessions
-    test_index_2 = np.append(test_index_2, np.arange(349, 400))
-    test_index_3 = np.append(test_index_3, np.arange(400, 415))
-    test_index_2 = np.append(test_index_2, np.arange(415, 436))    # to balance
-    test_index_3 = np.append(test_index_3, np.arange(436, 510))
-    test_index_4 = np.append(test_index_4, np.arange(510, 603))
-    test_index_1 = np.append(test_index_1, np.arange(603, 620))    # to balance
-    test_index_5 = np.append(test_index_5, np.arange(620, 709))
-
-    val_index_1 = test_index_2
-    val_index_2 = test_index_3
-    val_index_3 = test_index_4
-    val_index_4 = test_index_5
-    val_index_5 = test_index_1
-
-    all_index = np.arange(709)
-    train_index_1 = np.delete(all_index, np.append(test_index_1, val_index_1))  # delete val_index
-    train_index_2 = np.delete(all_index, np.append(test_index_2, val_index_2))
-    train_index_3 = np.delete(all_index, np.append(test_index_3, val_index_3))
-    train_index_4 = np.delete(all_index, np.append(test_index_4, val_index_4))
-    train_index_5 = np.delete(all_index, np.append(test_index_5, val_index_5))
-
-    return [train_index_1, val_index_1, test_index_1], [train_index_2, val_index_2, test_index_2], [train_index_3, val_index_3, test_index_3], [train_index_4, val_index_4, test_index_4], [train_index_5, val_index_5, test_index_5]
 
 
 def train_model(model, x_train, y_train, x_cv, y_cv, model_name):
@@ -83,7 +75,7 @@ def train_model(model, x_train, y_train, x_cv, y_cv, model_name):
 
     lr_reducer = ReduceLROnPlateau(factor=0.5, monitor='val_accuracy', mode=max, cooldown=0, patience=5, min_lr=0.5e-6)
 
-    earlystopping = EarlyStopping(monitor='val_accuracy', min_delta=0.001, patience=20, verbose=0, mode='auto',
+    earlystopping = EarlyStopping(monitor='val_accuracy', min_delta=0.001, patience=50, verbose=0, mode='auto',
                                   baseline=None, restore_best_weights=False)
     callbacks = [checkpoint, lr_reducer, tensorboard, earlystopping]
 
@@ -150,7 +142,29 @@ def train_model(model, x_train, y_train, x_cv, y_cv, model_name):
     return history, model
 
 
+def balance_training_and_validation_set(x_train, y_train, x_cv, y_cv, input_shape, num_classes):
+    ros = RandomOverSampler(sampling_strategy='auto', random_state=42)
+
+    x_train = np.reshape(x_train, (x_train.shape[0], -1))
+    y_train = np.argmax(y_train, axis=1)  # n_features
+    x_train_ros, y_train_ros = ros.fit_resample(x_train, y_train)  # resample the bad ones
+    x_train_ros = np.reshape(x_train_ros, (-1, input_shape[0], input_shape[1], 3))
+    y_train_ros = keras.utils.to_categorical(y_train_ros, num_classes)
+
+    x_cv = np.reshape(x_cv, (x_cv.shape[0], -1))
+    y_cv = np.argmax(y_cv, axis=1)
+    x_cv_ros, y_cv_ros = ros.fit_resample(x_cv, y_cv)
+    x_cv_ros = np.reshape(x_cv_ros, (-1, input_shape[0], input_shape[1], 3))
+    y_cv_ros = keras.utils.to_categorical(y_cv_ros, num_classes)
+
+    return x_train_ros, y_train_ros, x_cv_ros, y_cv_ros
+
+
 if __name__ == "__main__":
+    # type of training (complete or single fold)
+    train_single_fold = False
+    fold_index_to_train = 4
+
     # parameters
     num_classes = 2
     categories = ["Bad", "Workable"]
@@ -161,45 +175,36 @@ if __name__ == "__main__":
 
     # hard stratified K fold
     oos_y, oos_pred = [], []
-    folds, index_best_model, best_acc = 0, 1, 0
+    folds = 0
     x = np.reshape(x, (x.shape[0], -1))                                 # (n_samples, n_features)
 
-    for train_index, val_index, test_index in hard_stratified_kfold_patient_split():
+    for train_index, val_index, test_index in hard_stratified_kfold_patient_split_no_TURP():
         folds += 1
         print("\n fold #{}".format(folds))
-        # if folds == 1:
-        #     # if folds < 4:
-        #     with open("y_pred_{}.pickle".format(folds), 'rb') as data:
-        #         y_prediction = pickle.load(data)
-        #         data.close()
-        #     with open("y_test_{}.pickle".format(folds), 'rb') as data:
-        #         y_test = pickle.load(data)
-        #         data.close()
-        #     oos_y.append(y_test)                                        # [n features, n classes]
-        #     oos_pred.append(y_prediction)                               # [n features, n classes]
-        #     continue
 
         if folds == 1:
             x = np.reshape(x, (-1, input_shape[0], input_shape[1], 3))  # (n_samples, delta_y, delta_x, 3)
             y = keras.utils.to_categorical(y, num_classes)              # (n_samples, nb_classes)
+
+        if train_single_fold:
+            # reuse other fold results
+            if folds != fold_index_to_train:
+                with open("y_pred_{}.pickle".format(folds), 'rb') as data:
+                    y_prediction = pickle.load(data)
+                    data.close()
+                with open("y_test_{}.pickle".format(folds), 'rb') as data:
+                    y_test = pickle.load(data)
+                    data.close()
+                oos_y.append(y_test)                                        # [n features, n classes]
+                oos_pred.append(y_prediction)                               # [n features, n classes]
+                continue
 
         # create sets, index are shuffled
         x_train, x_cv, x_test = x[train_index], x[val_index], x[test_index]
         y_train, y_cv, y_test = y[train_index], y[val_index], y[test_index]
 
         # equalize training set and validation set
-        ros = RandomOverSampler(sampling_strategy='auto', random_state=42)
-        x_train = np.reshape(x_train, (x_train.shape[0], -1))
-        y_train = np.argmax(y_train, axis=1)                               # n_features
-        x_train_ros, y_train_ros = ros.fit_resample(x_train, y_train)      # resample the bad ones
-        x_train_ros = np.reshape(x_train_ros, (-1, input_shape[0], input_shape[1], 3))
-        y_train_ros = keras.utils.to_categorical(y_train_ros, num_classes)
-
-        x_cv = np.reshape(x_cv, (x_cv.shape[0], -1))
-        y_cv = np.argmax(y_cv, axis=1)
-        x_cv_ros, y_cv_ros = ros.fit_resample(x_cv, y_cv)
-        x_cv_ros = np.reshape(x_cv_ros, (-1, input_shape[0], input_shape[1], 3))
-        y_cv_ros = keras.utils.to_categorical(y_cv_ros, num_classes)
+        x_train_ros, y_train_ros, x_cv_ros, y_cv_ros = balance_training_and_validation_set(x_train, y_train, x_cv, y_cv, input_shape, num_classes)
 
         # shuffle again after oversampling
         np.random.seed(0)
@@ -229,10 +234,6 @@ if __name__ == "__main__":
         # print fold result
         headline = "fold #{}".format(folds)
         print_metrics(headline, np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
-        fold_acc = balanced_accuracy_score(np.argmax(y_test, axis=1), np.argmax(y_prediction, axis=1))
-        if fold_acc > best_acc:  # best acc according the best weights
-            index_best_model = folds
-            best_acc = fold_acc
 
     # build the oos y and pred
     oos_y = np.concatenate(oos_y)
